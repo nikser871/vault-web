@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import meety.dtos.UserDto;
 import meety.models.User;
 import meety.services.UserService;
-import meety.services.AuthService;
+import meety.services.auth.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,8 +28,8 @@ public class UserController {
             The password is hashed using BCrypt (via Spring Security's PasswordEncoder) before being persisted.
             The new user is assigned the default role 'User'."""
     )
-    public ResponseEntity<String> register(@RequestBody User user){
-        userService.registerUser(user);
+    public ResponseEntity<String> register(@RequestBody UserDto user){
+        userService.registerUser(new User(user));
         return ResponseEntity.ok("User registered successfully");
     }
 

@@ -1,0 +1,41 @@
+package meety.models;
+
+import jakarta.persistence.*;
+import lombok.*;
+import meety.dtos.GroupDto;
+
+import java.util.Date;
+import java.util.List;
+
+@Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(name = "group_entity")
+public class Group {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String description;
+
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<GroupMember> members;
+
+    @ManyToOne
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
+    private Date createdAt;
+    private Boolean isPublic;
+
+    public Group(GroupDto dto) {
+        name = dto.getName();
+        description = dto.getDescription();
+        members = List.of();
+        isPublic = true;
+        createdAt = new Date();
+    }
+}

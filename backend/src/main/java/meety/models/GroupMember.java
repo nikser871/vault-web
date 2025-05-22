@@ -1,0 +1,34 @@
+package meety.models;
+
+import jakarta.persistence.*;
+import lombok.*;
+import meety.models.enums.Role;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "group_members")
+public class GroupMember {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private Group group;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    public GroupMember(Group group, User user, Role role) {
+        this.group = group;
+        this.user = user;
+        this.role = role;
+    }
+}
