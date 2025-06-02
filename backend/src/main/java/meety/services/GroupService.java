@@ -1,10 +1,7 @@
 package meety.services;
 
 import meety.dtos.GroupDto;
-import meety.exceptions.GroupNotFoundException;
-import meety.exceptions.LastAdminException;
-import meety.exceptions.NotMemberException;
-import meety.exceptions.UserNotFoundException;
+import meety.exceptions.*;
 import meety.models.Group;
 import meety.models.GroupMember;
 import meety.models.User;
@@ -66,7 +63,7 @@ public class GroupService {
 
         boolean alreadyMember = groupMemberRepository.findByGroupAndUser(group, currentUser).isPresent();
         if (alreadyMember) {
-            throw new RuntimeException("User is already a member");
+            throw new AlreadyMemberException(groupId, currentUser.getId());
         }
 
         groupMemberRepository.save(new GroupMember(group, currentUser, Role.USER));
@@ -78,7 +75,7 @@ public class GroupService {
                 .orElseThrow(() -> new GroupNotFoundException("Group not found with id: " + groupId));
 
         GroupMember member = groupMemberRepository.findByGroupAndUser(group, currentUser)
-                .orElseThrow(() -> new RuntimeException("You are not a member of this group"));
+                .orElseThrow(() -> new NotMemberException(groupId, currentUser.getId()));
 
         groupMemberRepository.delete(member);
         return group;
@@ -86,7 +83,7 @@ public class GroupService {
 
     public List<User> getMembers(Long groupId) {
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new GroupNotFoundException("Group not found"));
 
         List<GroupMember> groupMembers = groupMemberRepository.findAllByGroup(group);
         return groupMembers.stream()

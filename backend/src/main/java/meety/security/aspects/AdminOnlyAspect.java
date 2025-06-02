@@ -1,5 +1,6 @@
 package meety.security.aspects;
 
+import meety.exceptions.AdminAccessDeniedException;
 import meety.models.GroupMember;
 import meety.models.User;
 import meety.models.enums.Role;
@@ -29,7 +30,7 @@ public class AdminOnlyAspect {
         User currentUser = authService.getCurrentUser();
 
         if (currentUser == null) {
-            throw new SecurityException("Access denied: Not authenticated.");
+            throw new AdminAccessDeniedException("Not authenticated.");
         }
 
         Object[] args = joinPoint.getArgs();
@@ -42,7 +43,7 @@ public class AdminOnlyAspect {
         Optional<GroupMember> groupMemberOpt = groupMemberRepository.findByGroupIdAndUserId(groupId, currentUser.getId());
 
         if (groupMemberOpt.isEmpty() || groupMemberOpt.get().getRole() != Role.ADMIN) {
-            throw new SecurityException("Access denied: Admin privileges for this group required.");
+            throw new AdminAccessDeniedException("Admin privileges for this group required.");
         }
     }
 }

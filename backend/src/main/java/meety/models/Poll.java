@@ -1,5 +1,6 @@
 package meety.models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
@@ -37,6 +39,10 @@ public class Poll {
     private Date deadline;
 
     private boolean isAnonymous;
+
+    @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<PollOption> options;
 
     @PrePersist
     protected void onCreate() {

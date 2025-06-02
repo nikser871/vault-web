@@ -1,6 +1,8 @@
 package meety.controllers;
 
-import meety.dtos.PollDto;
+import jakarta.validation.Valid;
+import meety.dtos.PollRequestDto;
+import meety.dtos.PollResponseDto;
 import meety.exceptions.GroupNotFoundException;
 import meety.models.Group;
 import meety.models.Poll;
@@ -28,19 +30,36 @@ public class PollController {
     private AuthService authService;
 
     @PostMapping("")
-    public ResponseEntity<Poll> createPoll(
+    public ResponseEntity<PollResponseDto> createPoll(
             @PathVariable Long groupId,
-            @RequestBody PollDto pollDto) {
+            @RequestBody @Valid PollRequestDto pollDto) {
         User currentUser = authService.getCurrentUser();
-        Group group = groupService.getGroupById(groupId).orElseThrow(() -> new GroupNotFoundException("Group with id {groupId} not found"));
+        Group group = groupService.getGroupById(groupId)
+                .orElseThrow(() -> new GroupNotFoundException("Group with id " + groupId + " not found"));
         Poll poll = pollService.createPoll(group, currentUser, pollDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(poll);
+
+        PollResponseDto responseDto = pollService.toResponseDto(poll);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @GetMapping("")
-    public ResponseEntity<List<PollDto>> getPolls(@PathVariable Long groupId) {
+    public ResponseEntity<List<PollResponseDto>> getPolls(@PathVariable Long groupId) {
         User currentUser = authService.getCurrentUser();
-        List<PollDto> polls = pollService.getPollsByGroup(groupId, currentUser).stream().map(PollDto::new).toList();
+        List<PollResponseDto> polls = pollService.getPollsByGroup(groupId, currentUser)
+                .stream()
+                .map(pollService::toResponseDto)
+                .toList();
         return ResponseEntity.ok(polls);
+    }
+
+    @PostMapping("/{pollId}/options/{optionId}/vote")
+    public ResponseEntity<Void> vote(
+            @PathVariable Long groupId,
+            @PathVariable Long pollId,
+            @PathVariable Long optionId) {
+        User currentUser = authService.getCurrentUser();
+        pollService.vote(groupId, pollId, optionId, currentUser);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
