@@ -15,7 +15,6 @@ import meety.repositories.UserRepository;
 import meety.security.EncryptionUtil;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 @Service
@@ -78,5 +77,13 @@ public class ChatService {
         }
 
         return chatMessageRepository.save(message);
+    }
+
+    public String decrypt(String cipherTextBase64, String ivBase64) {
+        try {
+            return encryptionUtil.decrypt(cipherTextBase64, ivBase64);
+        } catch (Exception e) {
+            throw new RuntimeException("Decryption failed", e);
+        }
     }
 }

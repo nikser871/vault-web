@@ -1,18 +1,28 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+  AfterViewChecked,
+} from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ChatMessageDto } from '../../models/dtos/ChatMessageDto';
 import { WebSocketService } from '../../services/web-socket.service';
-import { FormsModule } from '@angular/forms';
 import { PrivateChatService } from '../../services/private-chat.service';
+import { Subscription } from 'rxjs/internal/Subscription';
 
 @Component({
   selector: 'app-private-chat-dialog',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './private-chat-dialog.component.html',
-  styleUrl: './private-chat-dialog.component.scss',
+  styleUrls: ['./private-chat-dialog.component.scss'],
 })
-export class PrivateChatDialogComponent implements OnInit {
+export class PrivateChatDialogComponent implements OnInit, AfterViewChecked {
   @Input() username!: string;
   @Input() currentUsername!: string | null;
   @Input() privateChatId!: number;
@@ -20,6 +30,11 @@ export class PrivateChatDialogComponent implements OnInit {
 
   messages: ChatMessageDto[] = [];
   newMessage = '';
+
+  @ViewChild('messageContainer') messageContainer!: ElementRef<HTMLDivElement>;
+  private privateMessageSub!: Subscription;
+
+  private shouldScroll = false;
 
   constructor(
     private wsService: WebSocketService,
@@ -36,11 +51,34 @@ export class PrivateChatDialogComponent implements OnInit {
       },
     });
 
-    this.wsService.subscribeToPrivateMessages((msg: ChatMessageDto) => {
-      if (msg.privateChatId === this.privateChatId) {
-        this.messages.push(msg);
-      }
-    });
+    this.privateMessageSub = this.wsService
+      .subscribeToPrivateMessages()
+      .subscribe((msg) => {
+        if (msg.privateChatId === this.privateChatId) {
+          this.messages.push(msg);
+          this.shouldScroll = true;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.privateMessageSub?.unsubscribe();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScroll) {
+      this.scrollToBottom();
+      this.shouldScroll = false;
+    }
+  }
+
+  scrollToBottom(): void {
+    try {
+      this.messageContainer.nativeElement.scrollTop =
+        this.messageContainer.nativeElement.scrollHeight;
+    } catch (err) {
+      console.error('Scroll to bottom failed:', err);
+    }
   }
 
   sendMessage(): void {
@@ -54,10 +92,6 @@ export class PrivateChatDialogComponent implements OnInit {
     };
 
     this.wsService.sendPrivateMessage(message);
-
-    this.messages.push({
-      ...message,
-    });
 
     this.newMessage = '';
   }
