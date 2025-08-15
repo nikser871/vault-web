@@ -4,7 +4,7 @@ import SockJS from 'sockjs-client';
 import { ChatMessageDto } from '../models/dtos/ChatMessageDto';
 import { environment } from '../../environments/environment.test';
 import { AuthService } from './auth.service';
-import { Observable } from 'rxjs';
+import { Observable, Observer } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -61,23 +61,18 @@ export class WebSocketService {
 
   subscribeToPrivateMessages(): Observable<ChatMessageDto> {
     return new Observable((observer) => {
-      if (!this.connected) {
-        this.connectCallbacks.push(() => {
-          this.subscribeInternal(observer);
-        });
-      } else {
-        this.subscribeInternal(observer);
-      }
+      const subscribeAction = () => {
+        return this.subscribeInternal(observer);
+      };
 
       let unsubscribeFn: (() => void) | undefined;
 
       if (!this.connected) {
-        const connectCallback = () => {
-          unsubscribeFn = this.subscribeInternal(observer);
-        };
-        this.connectCallbacks.push(connectCallback);
+        this.connectCallbacks.push(() => {
+          unsubscribeFn = subscribeAction();
+        });
       } else {
-        unsubscribeFn = this.subscribeInternal(observer);
+        unsubscribeFn = subscribeAction();
       }
 
       return () => {
@@ -88,7 +83,7 @@ export class WebSocketService {
     });
   }
 
-  private subscribeInternal(observer: any) {
+  private subscribeInternal(observer: Observer<ChatMessageDto>) {
     const subscription = this.client?.subscribe(
       '/user/queue/private',
       (message) => {

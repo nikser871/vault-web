@@ -8,6 +8,7 @@ import {
   Output,
   ViewChild,
   AfterViewChecked,
+  OnDestroy,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChatMessageDto } from '../../models/dtos/ChatMessageDto';
@@ -22,11 +23,13 @@ import { Subscription } from 'rxjs/internal/Subscription';
   templateUrl: './private-chat-dialog.component.html',
   styleUrls: ['./private-chat-dialog.component.scss'],
 })
-export class PrivateChatDialogComponent implements OnInit, AfterViewChecked {
+export class PrivateChatDialogComponent
+  implements OnInit, OnDestroy, AfterViewChecked
+{
   @Input() username!: string;
   @Input() currentUsername!: string | null;
   @Input() privateChatId!: number;
-  @Output() close = new EventEmitter<void>();
+  @Output() closeChat = new EventEmitter<void>();
 
   messages: ChatMessageDto[] = [];
   newMessage = '';
@@ -98,6 +101,6 @@ export class PrivateChatDialogComponent implements OnInit, AfterViewChecked {
   }
 
   onClose(): void {
-    this.close.emit();
+    this.closeChat.emit();
   }
 }

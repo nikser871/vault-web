@@ -6,6 +6,7 @@ import { PrivateChatDialogComponent } from '../private-chat-dialog/private-chat-
 import { PrivateChatService } from '../../services/private-chat.service';
 import { PrivateChatDto } from '../../models/dtos/PrivateChatDto';
 import { AuthService } from '../../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -27,13 +28,14 @@ export class HomeComponent implements OnInit {
     private userService: UserService,
     private privateChatService: PrivateChatService,
     private authService: AuthService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.currentUsername = this.authService.getUsername();
 
     if (!this.currentUsername) {
-      // TODO: Handle case where user is not logged in
+      this.router.navigate(['/login']);
       this.error = 'User not logged in.';
       this.isLoading = false;
       return;

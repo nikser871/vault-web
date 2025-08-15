@@ -23,7 +23,7 @@ export const tokenInterceptor: HttpInterceptorFn = (req, next) => {
   }
 
   return next(req).pipe(
-    catchError((err: any) => {
+    catchError((err) => {
       if (err instanceof HttpErrorResponse && err.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('username');
