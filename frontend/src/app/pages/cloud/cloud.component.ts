@@ -321,4 +321,26 @@ export class CloudComponent implements OnInit {
         error: (err) => alert('Error renaming folder: ' + err.message),
       });
   }
+
+  previewFile(file: any) {
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const imageExt = ['png', 'jpg', 'jpeg', 'gif', 'bmp'];
+    const pdfExt = ['pdf'];
+    const textExt = ['txt', 'md', 'json', 'xml', 'log'];
+
+    if (ext && (imageExt.includes(ext) || pdfExt.includes(ext))) {
+      const relativePath = this.getRelativePath(file.path);
+      this.cloudService.getFileView(relativePath).subscribe({
+        next: (blob) => {
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        },
+        error: (err) => alert('Error previewing file: ' + err.message),
+      });
+    } else if (ext && textExt.includes(ext)) {
+      this.editFile(file);
+    } else {
+      this.downloadFile(file);
+    }
+  }
 }

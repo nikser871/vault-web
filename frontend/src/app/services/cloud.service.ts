@@ -97,4 +97,11 @@ export class CloudService {
       params,
     });
   }
+
+  getFileView(path: string) {
+    return this.http.get(`${this.apiUrl}/files/view`, {
+      params: { path },
+      responseType: 'blob',
+    });
+  }
 }

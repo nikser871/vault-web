@@ -156,12 +156,14 @@
           (dragover)="onDragOver($event)"
         >
           <td
-            class="px-1 py-0.5 sm:px-2 sm:py-1 flex items-center gap-1 sm:gap-2"
+            class="px-1 py-0.5 sm:px-2 sm:py-1 flex items-center gap-1 sm:gap-2 cursor-pointer"
             draggable="true"
             (dragstart)="onDragStart($event, file.path, false)"
+            (click)="previewFile(file)"
           >
             📄 {{ file.name }}
           </td>
+
           <td class="px-1 py-0.5 sm:px-2 sm:py-1">
             {{ formatFileSize(file.size) }}
           </td>
