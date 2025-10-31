@@ -22,11 +22,9 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Autowired
-    private MyUserDetailsService userDetailsService;
 
-    @Autowired
-    private JwtAuthFilter jwtAuthFilter;
+    private final MyUserDetailsService userDetailsService;
+    private final JwtAuthFilter jwtAuthFilter;
 
     /**
      * Defines the PasswordEncoder bean used for hashing passwords.

@@ -1,6 +1,7 @@
 package vaultWeb.controllers;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,14 +24,12 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/groups")
+@RequiredArgsConstructor
 @Tag(name = "Group Controller", description = "Manages the different groups a user can join")
 public class GroupController {
 
-    @Autowired
-    private GroupService groupService;
-
-    @Autowired
-    private AuthService authService;
+    private final GroupService groupService;
+    private final AuthService authService;
 
     /**
      * Retrieves all public groups.

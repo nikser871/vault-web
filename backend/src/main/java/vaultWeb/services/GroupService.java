@@ -1,5 +1,6 @@
 package vaultWeb.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vaultWeb.dtos.GroupDto;
@@ -24,16 +25,13 @@ import java.util.Optional;
  * joining, leaving, and managing group members.
  */
 @Service
+@RequiredArgsConstructor
 public class GroupService {
 
-    @Autowired
-    private GroupRepository groupRepository;
 
-    @Autowired
-    private GroupMemberRepository groupMemberRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final UserRepository userRepository;
 
     /**
      * Retrieves all public groups.

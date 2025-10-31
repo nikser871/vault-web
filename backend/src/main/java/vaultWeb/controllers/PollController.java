@@ -1,6 +1,7 @@
 package vaultWeb.controllers;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +24,12 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/groups/{groupId}/polls")
+@RequiredArgsConstructor
 public class PollController {
 
-    @Autowired
-    private GroupService groupService;
-
-    @Autowired
-    private PollService pollService;
-
-    @Autowired
-    private AuthService authService;
+    private final GroupService groupService;
+    private final PollService pollService;
+    private final AuthService authService;
 
     /**
      * Creates a new poll in the specified group.

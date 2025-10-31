@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +29,7 @@ import java.io.IOException;
  * </p>
  */
 @Component
+@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
@@ -39,11 +41,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      * @param jwtUtil            the utility class for JWT token operations (extracting username, validating token)
      * @param userDetailsService the user details service to load user information by username
      */
-    public JwtAuthFilter(JwtUtil jwtUtil, MyUserDetailsService userDetailsService) {
-        this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
-    }
-
     /**
      * Filters each HTTP request, performing JWT validation and setting authentication in the security context.
      * <p>

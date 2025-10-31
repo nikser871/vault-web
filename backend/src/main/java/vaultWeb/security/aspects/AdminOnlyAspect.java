@@ -1,5 +1,6 @@
 package vaultWeb.security.aspects;
 
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -29,13 +30,11 @@ import java.util.Optional;
  */
 @Aspect
 @Component
+@RequiredArgsConstructor
 public class AdminOnlyAspect {
 
-    @Autowired
-    private AuthService authService;
-
-    @Autowired
-    private GroupMemberRepository groupMemberRepository;
+    private final AuthService authService;
+    private final GroupMemberRepository groupMemberRepository;
 
     /**
      * Advice that runs before any method annotated with {@link vaultWeb.security.annotations.AdminOnly}.

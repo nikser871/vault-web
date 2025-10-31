@@ -1,5 +1,6 @@
 package vaultWeb.services.auth;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -41,10 +42,10 @@ import vaultWeb.repositories.UserRepository;
  * providing flexibility and security abstraction.
  */
 @Service
+@RequiredArgsConstructor
 public class MyUserDetailsService implements UserDetailsService {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     /**
      * Loads the user details for Spring Security based on the given username.

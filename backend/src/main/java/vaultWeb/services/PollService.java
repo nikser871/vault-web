@@ -1,5 +1,6 @@
 package vaultWeb.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import vaultWeb.dtos.PollRequestDto;
@@ -28,19 +29,14 @@ import java.util.stream.Collectors;
  * </p>
  */
 @Service
+@RequiredArgsConstructor
 public class PollService {
 
-    @Autowired
-    private PollRepository pollRepository;
 
-    @Autowired
-    private GroupRepository groupRepository;
-
-    @Autowired
-    private GroupMemberRepository groupMemberRepository;
-
-    @Autowired
-    private PollVoteRepository pollVoteRepository;
+    private final PollRepository pollRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final PollVoteRepository pollVoteRepository;
 
     /**
      * Creates a new poll in the specified group by the given author.

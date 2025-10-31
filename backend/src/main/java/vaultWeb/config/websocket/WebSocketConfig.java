@@ -1,5 +1,6 @@
 package vaultWeb.config.websocket;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -22,14 +23,10 @@ import vaultWeb.security.JwtUtil;
  */
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtUtil jwtUtil;
-
-    public WebSocketConfig(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
-
     /**
      * Configure message broker with a simple in-memory broker for topics and
      * application destination prefix for incoming messages.

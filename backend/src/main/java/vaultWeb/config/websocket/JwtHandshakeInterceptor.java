@@ -1,6 +1,7 @@
 package vaultWeb.config.websocket;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -19,13 +20,11 @@ import java.util.Map;
  * validates it, and stores the corresponding Authentication object in attributes.
  * If the token is invalid or missing, the handshake is rejected with HTTP 401.
  */
+@RequiredArgsConstructor
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private final JwtUtil jwtUtil;
 
-    public JwtHandshakeInterceptor(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
 
     /**
      * Intercepts the handshake request before it is processed.
