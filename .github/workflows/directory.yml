@@ -37,7 +37,7 @@ jobs:
       - name: Create or update Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DIRECTORY_TOKEN }}
           branch: dependabot/directory-update
           base: main
           title: "Bump directory structure (auto-generated)"
