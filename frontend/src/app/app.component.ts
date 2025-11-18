@@ -18,10 +18,6 @@ export class AppComponent {
     private router: Router,
     private themeService: ThemeService,
   ) {
-    // Initialize theme service (loads saved theme from localStorage)
-    // This ensures the theme is applied on app startup
-    this.themeService.getCurrentTheme();
-
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
