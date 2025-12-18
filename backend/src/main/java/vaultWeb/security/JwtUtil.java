@@ -46,7 +46,7 @@ public class JwtUtil {
   /** Secret key used for signing the JWT. Generated using HS256 (HMAC with SHA-256) algorithm. */
   private final SecretKey SECRET_KEY;
 
-  private final long EXPIRATION_TIME = 1000 * 60 * 60;
+  private final long EXPIRATION_TIME = 1000 * 60 * 15;
 
   public JwtUtil(@Value("${jwt.secret}") String secret) {
     this.SECRET_KEY = Keys.hmacShaKeyFor(secret.getBytes());

@@ -19,7 +19,7 @@ export class AuthService {
     return this.http
       .post<{
         token: string;
-      }>(`${this.apiUrl}/auth/login`, { username, password })
+      }>(`${this.apiUrl}/auth/login`, { username, password }, { withCredentials: true })
       .pipe(
         tap((res) => {
           this.saveToken(res.token);
@@ -35,6 +35,15 @@ export class AuthService {
       { responseType: 'text' },
     );
   }
+
+  refresh(): Observable<{ token: string }> {
+    return this.http.post<{ token: string }>(
+      `${this.apiUrl}/auth/refresh`,
+      {},
+      { withCredentials: true } 
+    );
+  }
+
 
   saveToken(token: string): void {
     localStorage.setItem('token', token);
@@ -59,7 +68,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
-
+    this.http.post('/api/auth/logout', {}, { withCredentials: true }).subscribe();
     this.router.navigate(['/login']);
   }
 

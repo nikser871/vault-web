@@ -1,16 +1,25 @@
 package vaultWeb.services.auth;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vaultWeb.exceptions.notfound.UserNotFoundException;
+import vaultWeb.models.RefreshToken;
 import vaultWeb.models.User;
+import vaultWeb.repositories.RefreshTokenRepository;
 import vaultWeb.repositories.UserRepository;
 import vaultWeb.security.JwtUtil;
+
+import java.time.Instant;
+import java.util.Map;
 
 /**
  * Service class responsible for handling authentication and user session-related operations.
@@ -42,6 +51,9 @@ public class AuthService {
   private final AuthenticationManager authenticationManager;
   private final JwtUtil jwtUtil;
   private final UserRepository userRepository;
+  private final RefreshTokenRepository refreshTokenRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final RefreshTokenService refreshTokenService;
 
   /**
    * Authenticates a user using their username and password and returns a JWT token upon successful
@@ -72,7 +84,7 @@ public class AuthService {
    * @return a signed JWT token representing the authenticated user
    * @throws UserNotFoundException if the user does not exist in the database
    */
-  public String login(String username, String password) {
+  public LoginResult login(String username, String password) {
     Authentication authentication =
         authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(username, password));
@@ -86,7 +98,8 @@ public class AuthService {
             .orElseThrow(
                 () -> new UserNotFoundException("User not found: " + userDetails.getUsername()));
 
-    return jwtUtil.generateToken(user);
+    String accessToken= jwtUtil.generateToken(user);
+    return new LoginResult(user,accessToken);
   }
 
   /**
@@ -109,5 +122,49 @@ public class AuthService {
     }
 
     return null;
+  }
+
+  public ResponseEntity<?> refresh(String rawRefreshToken, HttpServletResponse response) {
+
+    /*
+    *   create hash of refreshtoken using
+    *   check for hash in db if it exist then see if it is used or not if used logout or unauthorized
+    *   if unused create new refresh token and accestoken
+    *   return access in jwt and new refresh in cookie
+    * */
+
+    // 1️⃣ Find token by hash comparison
+    RefreshToken storedToken = refreshTokenRepository
+            .findAllValidTokens() // explained below
+            .stream()
+            .filter(rt -> passwordEncoder.matches(rawRefreshToken, rt.getTokenHash()))
+            .findFirst()
+            .orElse(null);
+
+    // 2️⃣ Token not found → possible reuse / stolen token
+    if (storedToken == null) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    // 3️⃣ Check revoked or expired
+    if (storedToken.isRevoked() || storedToken.getExpiresAt().isBefore(Instant.now())) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    User user = storedToken.getUser();
+
+    // 4️⃣ ROTATION: revoke old token
+    storedToken.setRevoked(true);
+    refreshTokenRepository.save(storedToken);
+
+    // 5️⃣ Issue new refresh token
+    refreshTokenService.create(user, response);
+
+    // 6️⃣ Issue new access token
+    String newAccessToken = jwtUtil.generateToken(user);
+
+    // 7️⃣ Return access token (frontend contract unchanged)
+    return ResponseEntity.ok(Map.of("token", newAccessToken));
+
   }
 }
