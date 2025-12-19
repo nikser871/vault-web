@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
@@ -40,34 +41,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
    *     token)
    * @param userDetailsService the user details service to load user information by username
    */
-  /**
-   * Filters each HTTP request, performing JWT validation and setting authentication in the security
-   * context.
-   *
-   * <p>Steps:
-   *
-   * <ol>
-   *   <li>Skip requests starting with "/api/auth/".
-   *   <li>Extract JWT from the "Authorization" header if it starts with "Bearer ".
-   *   <li>Validate the token and extract the username.
-   *   <li>Load user details and set authentication in the {@link SecurityContextHolder}.
-   * </ol>
-   *
-   * If the token is invalid or expired, a 401 Unauthorized response is returned.
-   *
-   * @param request the incoming HTTP request
-   * @param response the HTTP response
-   * @param filterChain the filter chain
-   * @throws ServletException if a servlet error occurs
-   * @throws IOException if an I/O error occurs
-   */
+  private static final List<String> PUBLIC_PATHS =
+      List.of("/api/auth/login", "/api/auth/register", "/api/auth/check-username");
+
+  /** Filters each HTTP request, performing JWT validation and setting authentication context. */
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
     String path = request.getServletPath();
-    if (path.startsWith("/api/auth/")) {
+    if (PUBLIC_PATHS.contains(path)) {
       filterChain.doFilter(request, response);
       return;
     }
