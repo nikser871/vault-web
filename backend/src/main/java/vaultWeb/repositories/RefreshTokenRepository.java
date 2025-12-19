@@ -7,23 +7,33 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import vaultWeb.models.RefreshToken;
 
-import java.util.List;
+import java.time.Instant;
+import java.util.Optional;
 
-public interface RefreshTokenRepository extends JpaRepository<RefreshToken,Long> {
+public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     @Modifying
     @Transactional
     @Query("""
-    update RefreshToken rt
-    set rt.revoked = true
-    where rt.user.id = :userId
-  """)
+              update RefreshToken rt
+              set rt.revoked = true
+              where rt.user.id = :userId
+            """)
     void revokeAllByUser(@Param("userId") Long userId);
 
+
+    Optional<RefreshToken> findByTokenIdAndRevokedFalse(String tokenId);
+
+    @Modifying
+    @Transactional
     @Query("""
-        select rt from RefreshToken rt
-        where rt.revoked = false
-          and rt.expiresAt > CURRENT_TIMESTAMP
-    """)
-    List<RefreshToken> findAllValidTokens();
+                DELETE FROM RefreshToken rt
+                WHERE rt.expiresAt < :now
+                   OR (rt.revoked = true AND rt.createdAt < :cutoff)
+            """)
+    int deleteExpiredAndOldRevoked(
+            @Param("now") Instant now,
+            @Param("cutoff") Instant cutoff
+    );
+
 
 }
