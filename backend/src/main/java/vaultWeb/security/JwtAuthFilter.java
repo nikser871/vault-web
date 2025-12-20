@@ -41,7 +41,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
               "/api/auth/login",
               "/api/auth/register",
               "/api/auth/check-username",
-              "/api/auth/refresh"));
+              "/api/auth/refresh",
+              "/api/auth/logout"));
 
   /**
    * Constructs a new {@code JwtAuthFilter} with the specified {@link JwtUtil} and {@link
