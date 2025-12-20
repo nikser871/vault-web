@@ -46,6 +46,8 @@ export class AuthService {
       {},
       { withCredentials: true },
     );
+  }
+
   changePassword(
     currentPassword: string,
     newPassword: string,
