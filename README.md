@@ -146,8 +146,7 @@ npm start
 ```
 
 Open:
-👉 [https://localhost:4200
-](https://localhost:4200)
+👉 [https://localhost:4200](https://localhost:4200)
 
 ---
 
