@@ -1,0 +1,110 @@
+package vaultWeb.security.aspects;
+
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.ConsumptionProbe;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import jakarta.servlet.http.HttpServletRequest;
+import vaultWeb.security.annotations.ApiRateLimit;
+import vaultWeb.exceptions.RateLimitExceededException;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Aspect
+@Component
+public class RateLimitAspect {
+
+    private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
+    @Around("@annotation(apiRateLimit)")
+    public Object rateLimit(ProceedingJoinPoint joinPoint, ApiRateLimit apiRateLimit) throws Throwable {
+        
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+                .currentRequestAttributes()).getRequest();
+        
+        String key = getRateLimitKey(joinPoint, request, apiRateLimit);
+        Bucket bucket = resolveBucket(key, apiRateLimit);
+
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+        
+        if (probe.isConsumed()) {
+            request.setAttribute("X-Rate-Limit-Remaining", probe.getRemainingTokens());
+            return joinPoint.proceed();
+        } else {
+            long retryAfter = probe.getNanosToWaitForRefill() / 1_000_000_000;
+            throw new RateLimitExceededException(
+                "Rate limit exceeded. Try again in " + retryAfter + " seconds", 
+                retryAfter
+            );
+        }
+    }
+
+    private Bucket resolveBucket(String key, ApiRateLimit rateLimit) {
+        return cache.computeIfAbsent(key, k -> {
+            Bandwidth limit = Bandwidth.builder()
+                    .capacity(rateLimit.capacity())
+                    .refillGreedy(rateLimit.refillTokens(),
+                            Duration.ofMinutes(rateLimit.refillDurationMinutes()))
+                    .build();
+
+            return Bucket.builder().addLimit(limit).build();
+        });
+    }
+
+    private String getRateLimitKey(ProceedingJoinPoint joinPoint, 
+                                   HttpServletRequest request, 
+                                   ApiRateLimit rateLimit) {
+        String methodName = joinPoint.getSignature().toShortString();
+        
+        if (rateLimit.useIpAddress()) {
+            String ipAddress = getClientIpAddress(request);
+            return methodName + ":" + ipAddress;
+        } else {
+            String userId = extractUserIdFromToken(request);
+            return methodName + ":" + (userId != null ? userId : "anonymous");
+        }
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String extractUserIdFromToken(HttpServletRequest request) {
+        try {
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                return null;
+            }
+            
+            String token = authHeader.substring(7);
+            
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(jwtSecret.getBytes())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            
+            return claims.getSubject();
+            
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}
