@@ -3,6 +3,11 @@ package vaultWeb.integration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -11,19 +16,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.jsonwebtoken.Claims;
+
 import jakarta.servlet.http.Cookie;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import vaultWeb.dtos.user.UserDto;
 import vaultWeb.models.User;
 import vaultWeb.repositories.UserRepository;
 import vaultWeb.security.JwtUtil;
-
 class UserControllerIntegrationTest extends IntegrationTestBase {
 
   // ============================================================================
@@ -54,7 +52,18 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
   private String authHeader(String token) {
     return "Bearer " + token;
   }
+  private void registerUser(UserDto testUser) throws Exception {
+    mockMvc
+        .perform(
+            post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(testUser)))
+        .andExpect(status().isOk())
+        .andExpect(content().string("User registered successfully"));
+  }
 
+
+  
   // ============================================================================
   // Stage 1: Foundation Setup
   // ============================================================================
@@ -74,13 +83,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
     UserDto testUser = createUserDto("testuser", "TestPassword1");
 
     // Perform registration request and verify response
-    mockMvc
-        .perform(
-            post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testUser)))
-        .andExpect(status().isOk())
-        .andExpect(content().string("User registered successfully"));
+    registerUser(testUser);
 
     // Verify user is saved in database
     assertTrue(userRepository.findByUsername(testUser.getUsername()).isPresent());
@@ -93,13 +96,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
   @Test
   void shouldFailRegistration_WhenDuplicateUsername() throws Exception {
     UserDto testUser = createUserDto("testuser", "TestPassword1");
-    mockMvc
-        .perform(
-            post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testUser)))
-        .andExpect(status().isOk())
-        .andExpect(content().string("User registered successfully"));
+    registerUser(testUser);
     mockMvc
         .perform(
             post("/api/auth/register")
@@ -115,13 +112,7 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
   void shouldLogin_WithValidCredentials() throws Exception {
     // Register a user first
     UserDto testUser = createUserDto("testuser", "TestPassword1");
-    mockMvc
-        .perform(
-            post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(testUser)))
-        .andExpect(status().isOk())
-        .andExpect(content().string("User registered successfully"));
+    registerUser(testUser);
 
     // Login with the registered user and capture result
     MvcResult result =
@@ -156,25 +147,52 @@ class UserControllerIntegrationTest extends IntegrationTestBase {
 
   @Test
   void shouldGenerateValidJwtToken_OnLogin() throws Exception {
-    // TODO: Register and login
-    // TODO: Extract access token from response
-    // TODO: Parse token using jwtUtil
-    // TODO: Verify token contains username claim
-    // TODO: Verify token is not expired
+    UserDto testUser = createUserDto("testuser", "TestPassword1");
+    registerUser(testUser);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(testUser)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").exists())
+            .andReturn();
+    String token = extractTokenFromResponse(result);
+    assertTrue(jwtUtil.validateToken(token));
+    String username = jwtUtil.extractUsername(token);
+    assertEquals(testUser.getUsername(), username);
   }
 
   @Test
   void shouldAccessProtectedEndpoint_WithValidToken() throws Exception {
-    // TODO: Register and login to get token
-    // TODO: Call GET /api/auth/users with Authorization: Bearer {token}
-    // TODO: Verify 200 OK response
-    // TODO: Verify response contains user list
+    UserDto testUser = createUserDto("testuser", "TestPassword1");
+    registerUser(testUser);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(testUser)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").exists())
+            .andReturn();
+    String token = extractTokenFromResponse(result);
+    mockMvc
+        .perform(
+            get("/api/auth/users")
+                .header("Authorization", authHeader(token)))
+        .andExpect(status().isOk()) 
+        .andExpect(content().json("[{\"username\":\"testuser\"}]"));
   }
 
   @Test
   void shouldReject_WithInvalidToken() throws Exception {
-    // TODO: Call GET /api/auth/users with invalid/malformed token
-    // TODO: Verify 401 Unauthorized response
+    mockMvc
+        .perform(
+            get("/api/auth/users")
+                .header("Authorization", authHeader("invalid_token")))
+        .andExpect(status().isUnauthorized());
   }
 
   @Test
