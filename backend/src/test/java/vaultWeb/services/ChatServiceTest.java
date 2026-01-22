@@ -213,4 +213,24 @@ class ChatServiceTest {
 
     assertThrows(DecryptionFailedException.class, () -> chatService.decrypt("badCipher", "badIv"));
   }
+
+  @Test
+  void shouldFailSaveMessage_WhenPrivateChatNotFound() throws Exception {
+    User sender = createUser(1L, "user1");
+    ChatMessageDto dto = new ChatMessageDto();
+    dto.setSenderId(1L);
+    dto.setPrivateChatId(99L);
+    dto.setContent("Hello");
+
+    EncryptionUtil.EncryptResult encryptResult =
+        new EncryptionUtil.EncryptResult("encrypted", "iv");
+
+    when(userRepository.findById(1L)).thenReturn(Optional.of(sender));
+    when(privateChatRepository.findById(99L)).thenReturn(Optional.empty());
+    when(encryptionUtil.encrypt("Hello")).thenReturn(encryptResult);
+
+    assertThrows(GroupNotFoundException.class, () -> chatService.saveMessage(dto));
+
+    verify(chatMessageRepository, never()).save(any());
+  }
 }
