@@ -6,9 +6,12 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PasswordManagerService } from '../../services/password-manager.service';
 import { PasswordEntryDto } from '../../models/dtos/PasswordEntryDto';
 import { PasswordEntryCreateRequestDto } from '../../models/dtos/PasswordEntryCreateRequestDto';
+import { PasswordManagerVaultService } from '../../services/password-manager-vault.service';
+import { PasswordManagerUnlockService } from '../../services/password-manager-unlock.service';
 
 @Component({
   selector: 'app-password-manager',
@@ -32,9 +35,20 @@ export class PasswordManagerComponent implements OnInit {
   revealedPasswords = new Map<number, string>();
   revealLoadingIds = new Set<number>();
 
+  vaultInitialized: boolean | null = null;
+  isVaultStatusLoading = false;
+
+  unlockForm: FormGroup;
+  setupForm: FormGroup;
+  isUnlocking = false;
+  isSettingUp = false;
+  vaultGateError: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private passwordManagerService: PasswordManagerService,
+    private vaultService: PasswordManagerVaultService,
+    private unlockService: PasswordManagerUnlockService,
   ) {
     this.createForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
@@ -44,13 +58,36 @@ export class PasswordManagerComponent implements OnInit {
       notes: ['', [Validators.maxLength(500)]],
       categoryId: [''],
     });
+
+    const masterPasswordValidators = [
+      Validators.required,
+      Validators.minLength(8),
+      Validators.maxLength(1024),
+    ];
+
+    this.unlockForm = this.fb.group({
+      masterPassword: ['', masterPasswordValidators],
+    });
+
+    this.setupForm = this.fb.group({
+      masterPassword: ['', masterPasswordValidators],
+    });
   }
 
   ngOnInit(): void {
-    this.loadEntries();
+    this.refreshVaultStatus();
+  }
+
+  isVaultUnlocked(): boolean {
+    return this.unlockService.isUnlocked();
   }
 
   addPassword(): void {
+    if (!this.isVaultUnlocked()) {
+      this.vaultGateError = 'Unlock your vault to manage passwords.';
+      return;
+    }
+
     this.hasSaveError = false;
     this.isEditing = false;
     this.editingId = null;
@@ -59,6 +96,11 @@ export class PasswordManagerComponent implements OnInit {
   }
 
   editPassword(entry: PasswordEntryDto): void {
+    if (!this.isVaultUnlocked()) {
+      this.vaultGateError = 'Unlock your vault to edit passwords.';
+      return;
+    }
+
     this.hasSaveError = false;
     this.isEditing = true;
     this.editingId = entry.id;
@@ -130,6 +172,11 @@ export class PasswordManagerComponent implements OnInit {
   }
 
   deletePassword(entry: PasswordEntryDto): void {
+    if (!this.isVaultUnlocked()) {
+      this.vaultGateError = 'Unlock your vault to delete passwords.';
+      return;
+    }
+
     const confirmed = window.confirm(
       `Delete password entry "${entry.name}"? This cannot be undone.`,
     );
@@ -144,6 +191,7 @@ export class PasswordManagerComponent implements OnInit {
         this.revealLoadingIds.delete(entry.id);
       },
       error: (err) => {
+        this.handleApiError(err);
         console.error('Failed to delete password entry', err);
       },
     });
@@ -166,6 +214,11 @@ export class PasswordManagerComponent implements OnInit {
   }
 
   toggleReveal(entryId: number): void {
+    if (!this.isVaultUnlocked()) {
+      this.vaultGateError = 'Unlock your vault to reveal passwords.';
+      return;
+    }
+
     if (this.isRevealed(entryId)) {
       this.revealedPasswords.delete(entryId);
       return;
@@ -183,14 +236,141 @@ export class PasswordManagerComponent implements OnInit {
       },
       error: (err) => {
         this.revealLoadingIds.delete(entryId);
-        // Keep reveal errors local for now; don't replace the entire table state.
-        // Useful details still available in devtools.
+        this.handleApiError(err);
         console.error('Failed to reveal password', err);
       },
     });
   }
 
+  submitUnlock(): void {
+    this.vaultGateError = null;
+    if (this.unlockForm.invalid) {
+      this.unlockForm.markAllAsTouched();
+      return;
+    }
+
+    const masterPassword = String(this.unlockForm.value.masterPassword ?? '');
+    this.isUnlocking = true;
+
+    this.vaultService.unlock(masterPassword).subscribe({
+      next: (res) => {
+        this.isUnlocking = false;
+        this.unlockService.setToken(res.token, res.expiresAt);
+        this.unlockForm.reset();
+        this.loadEntries();
+      },
+      error: (err) => {
+        this.isUnlocking = false;
+        this.handleApiError(err);
+      },
+    });
+  }
+
+  submitSetup(): void {
+    this.vaultGateError = null;
+    if (this.setupForm.invalid) {
+      this.setupForm.markAllAsTouched();
+      return;
+    }
+
+    const masterPassword = String(this.setupForm.value.masterPassword ?? '');
+    this.isSettingUp = true;
+
+    this.vaultService.setup(masterPassword).subscribe({
+      next: () => {
+        this.isSettingUp = false;
+        this.vaultInitialized = true;
+
+        this.unlockForm.setValue({ masterPassword });
+        this.submitUnlock();
+
+        this.setupForm.reset();
+      },
+      error: (err) => {
+        this.isSettingUp = false;
+        this.handleApiError(err);
+      },
+    });
+  }
+
+  lockVault(): void {
+    const token = this.unlockService.getToken();
+    this.vaultService.lock(token).subscribe({
+      next: () => {
+        this.unlockService.clear();
+        this.revealedPasswords.clear();
+        this.revealLoadingIds.clear();
+        this.entries = [];
+        this.vaultGateError = null;
+      },
+      error: () => {
+        // Even if backend lock fails, clear local token to be safe.
+        this.unlockService.clear();
+        this.revealedPasswords.clear();
+        this.revealLoadingIds.clear();
+        this.entries = [];
+      },
+    });
+  }
+
+  private refreshVaultStatus(): void {
+    this.isVaultStatusLoading = true;
+    this.vaultGateError = null;
+
+    this.vaultService.status().subscribe({
+      next: (res) => {
+        this.isVaultStatusLoading = false;
+        this.vaultInitialized = !!res.initialized;
+
+        if (this.vaultInitialized && this.unlockService.isUnlocked()) {
+          this.loadEntries();
+        }
+      },
+      error: (err) => {
+        this.isVaultStatusLoading = false;
+        this.vaultGateError = 'Failed to check vault status.';
+        console.error('Failed to load vault status', err);
+      },
+    });
+  }
+
+  private handleApiError(err: unknown): void {
+    const httpErr = err as HttpErrorResponse;
+    if (!httpErr || typeof httpErr.status !== 'number') {
+      this.vaultGateError = 'Request failed.';
+      return;
+    }
+
+    if (httpErr.status === 409) {
+      this.unlockService.clear();
+      this.vaultInitialized = false;
+      this.vaultGateError = 'Vault is not initialized yet.';
+      return;
+    }
+
+    if (httpErr.status === 428) {
+      this.unlockService.clear();
+      this.revealedPasswords.clear();
+      this.revealLoadingIds.clear();
+      this.vaultGateError = 'Vault is locked. Please unlock with your master password.';
+      return;
+    }
+
+    if (httpErr.status === 401) {
+      this.vaultGateError = 'You are not logged in.';
+      return;
+    }
+
+    this.vaultGateError = 'Request failed.';
+  }
+
   private loadEntries(): void {
+    if (!this.isVaultUnlocked()) {
+      this.hasLoadError = false;
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
     this.hasLoadError = false;
 
@@ -202,6 +382,7 @@ export class PasswordManagerComponent implements OnInit {
       error: (err) => {
         this.isLoading = false;
         this.hasLoadError = true;
+        this.handleApiError(err);
         console.error('Failed to load password entries', err);
       },
     });
