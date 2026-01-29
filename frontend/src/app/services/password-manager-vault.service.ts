@@ -9,7 +9,7 @@ export interface VaultStatusResponseDto {
 
 export interface VaultUnlockResponseDto {
   token: string;
-  expiresAt: string; 
+  expiresAt: string;
 }
 
 @Injectable({
@@ -25,13 +25,18 @@ export class PasswordManagerVaultService {
   }
 
   setup(masterPassword: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/vault/setup`, { masterPassword });
+    return this.http.post<void>(`${this.apiUrl}/vault/setup`, {
+      masterPassword,
+    });
   }
 
   unlock(masterPassword: string): Observable<VaultUnlockResponseDto> {
-    return this.http.post<VaultUnlockResponseDto>(`${this.apiUrl}/vault/unlock`, {
-      masterPassword,
-    });
+    return this.http.post<VaultUnlockResponseDto>(
+      `${this.apiUrl}/vault/unlock`,
+      {
+        masterPassword,
+      },
+    );
   }
 
   lock(vaultToken: string | null): Observable<void> {
@@ -43,8 +48,12 @@ export class PasswordManagerVaultService {
 
   migrate(vaultToken: string): Observable<{ migratedCount: number }> {
     const headers = new HttpHeaders({ 'X-Vault-Token': vaultToken });
-    return this.http.post<{ migratedCount: number }>(`${this.apiUrl}/vault/migrate`, null, {
-      headers,
-    });
+    return this.http.post<{ migratedCount: number }>(
+      `${this.apiUrl}/vault/migrate`,
+      null,
+      {
+        headers,
+      },
+    );
   }
 }

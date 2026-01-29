@@ -32,7 +32,8 @@ export class PasswordManagerUnlockService {
   setToken(token: string, expiresAt?: string | Date | null): void {
     sessionStorage.setItem(TOKEN_KEY, token);
     if (expiresAt) {
-      const date = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
+      const date =
+        typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
       if (!Number.isNaN(date.getTime())) {
         sessionStorage.setItem(EXPIRES_AT_KEY, date.toISOString());
       }

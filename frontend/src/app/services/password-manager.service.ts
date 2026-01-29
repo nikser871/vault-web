@@ -26,14 +26,20 @@ export class PasswordManagerService {
 
   getAll(): Observable<PasswordEntryDto[]> {
     const headers = this.buildAuthHeaders();
-    return this.http.get<PasswordEntryDto[]>(`${this.apiUrl}/passwords`, { headers });
+    return this.http.get<PasswordEntryDto[]>(`${this.apiUrl}/passwords`, {
+      headers,
+    });
   }
 
   create(payload: PasswordEntryCreateRequestDto): Observable<PasswordEntryDto> {
     const headers = this.buildAuthHeaders();
-    return this.http.post<PasswordEntryDto>(`${this.apiUrl}/passwords`, payload, {
-      headers,
-    });
+    return this.http.post<PasswordEntryDto>(
+      `${this.apiUrl}/passwords`,
+      payload,
+      {
+        headers,
+      },
+    );
   }
 
   update(
@@ -41,14 +47,20 @@ export class PasswordManagerService {
     payload: PasswordEntryCreateRequestDto,
   ): Observable<PasswordEntryDto> {
     const headers = this.buildAuthHeaders();
-    return this.http.put<PasswordEntryDto>(`${this.apiUrl}/passwords/${id}`, payload, {
-      headers,
-    });
+    return this.http.put<PasswordEntryDto>(
+      `${this.apiUrl}/passwords/${id}`,
+      payload,
+      {
+        headers,
+      },
+    );
   }
 
   delete(id: number): Observable<void> {
     const headers = this.buildAuthHeaders();
-    return this.http.delete<void>(`${this.apiUrl}/passwords/${id}`, { headers });
+    return this.http.delete<void>(`${this.apiUrl}/passwords/${id}`, {
+      headers,
+    });
   }
 
   reveal(id: number): Observable<PasswordRevealResponseDto> {
@@ -68,4 +80,3 @@ export class PasswordManagerService {
     );
   }
 }
-

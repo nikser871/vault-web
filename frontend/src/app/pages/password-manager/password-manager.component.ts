@@ -132,7 +132,9 @@ export class PasswordManagerComponent implements OnInit {
 
     const raw = this.createForm.value;
     const categoryId =
-      raw.categoryId === null || raw.categoryId === undefined || raw.categoryId === ''
+      raw.categoryId === null ||
+      raw.categoryId === undefined ||
+      raw.categoryId === ''
         ? null
         : Number(raw.categoryId);
 
@@ -142,7 +144,9 @@ export class PasswordManagerComponent implements OnInit {
       password: String(raw.password ?? ''),
       url: raw.url ? String(raw.url).trim() : null,
       notes: raw.notes ? String(raw.notes).trim() : null,
-      categoryId: Number.isFinite(categoryId as number) ? (categoryId as number) : null,
+      categoryId: Number.isFinite(categoryId as number)
+        ? (categoryId as number)
+        : null,
     };
 
     this.isSaving = true;
@@ -352,7 +356,8 @@ export class PasswordManagerComponent implements OnInit {
       this.unlockService.clear();
       this.revealedPasswords.clear();
       this.revealLoadingIds.clear();
-      this.vaultGateError = 'Vault is locked. Please unlock with your master password.';
+      this.vaultGateError =
+        'Vault is locked. Please unlock with your master password.';
       return;
     }
 
@@ -388,4 +393,3 @@ export class PasswordManagerComponent implements OnInit {
     });
   }
 }
-
