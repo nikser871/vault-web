@@ -17,7 +17,11 @@ import vaultWeb.models.GroupMember;
 import vaultWeb.models.PrivateChat;
 import vaultWeb.models.User;
 import vaultWeb.models.enums.Role;
-import vaultWeb.repositories.*;
+import vaultWeb.repositories.ChatMessageRepository;
+import vaultWeb.repositories.GroupMemberRepository;
+import vaultWeb.repositories.GroupRepository;
+import vaultWeb.repositories.PrivateChatRepository;
+import vaultWeb.repositories.UserRepository;
 
 /**
  * Service class for handling private chats between two users.
@@ -126,6 +130,7 @@ public class PrivateChatService {
             .description(description)
             .createdBy(creator)
             .createdAt(Instant.now())
+            .isPublic(false)
             .build();
 
     Set<User> participants = new HashSet<>();

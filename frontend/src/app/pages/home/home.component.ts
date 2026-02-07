@@ -8,6 +8,7 @@ import { PrivateChatDto } from '../../models/dtos/PrivateChatDto';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -49,38 +50,26 @@ export class HomeComponent implements OnInit {
       this.isLoading = false;
       return;
     }
-    /*
-        this.userService.getAllUsers().subscribe({
-          next: (data) => {
-            this.users = data;
-            this.isLoading = false;
-          },
-          error: () => {
-            this.error = 'Failed to load users.';
-            this.isLoading = false;
-          },
-        });
-     */
-
     this.loadData();
   }
 
   private loadData() {
     this.isLoading = true;
-
-    Promise.all([
-      this.userService.getAllUsers().toPromise(),
-      this.privateChatService.getUserPrivateChats().toPromise(),
-    ])
-      .then(([users, chats]) => {
+    this.error = null;
+    forkJoin({
+      users: this.userService.getAllUsers(),
+      chats: this.privateChatService.getUserPrivateChats(),
+    }).subscribe({
+      next: ({ users, chats }) => {
         this.users = users || [];
         this.privateChats = chats || [];
         this.isLoading = false;
-      })
-      .catch(() => {
+      },
+      error: () => {
         this.error = 'Failed to Load data.';
         this.isLoading = false;
-      });
+      },
+    });
   }
 
   openChat(username: string): void {
@@ -124,8 +113,7 @@ export class HomeComponent implements OnInit {
     return this.selectedChatIds.has(chatId);
   }
 
-  hasSelectedChats() {
-    console.log('Selected items size ' + this.selectedChatIds.size);
+  get hasSelectedChats(): boolean {
     return this.selectedChatIds.size > 0;
   }
 
@@ -150,7 +138,7 @@ export class HomeComponent implements OnInit {
   }
 
   openClearConfirmDialog() {
-    if (this.hasSelectedChats()) {
+    if (this.hasSelectedChats) {
       this.showClearConfirmDialog = true;
     }
   }
@@ -183,7 +171,7 @@ export class HomeComponent implements OnInit {
   }
 
   openCreateGroupDialog() {
-    if (this.hasSelectedChats()) {
+    if (this.hasSelectedChats) {
       this.showGroupDialog = true;
       this.newGroupName = '';
     }
@@ -198,8 +186,7 @@ export class HomeComponent implements OnInit {
     this.privateChatService
       .createGroupFromChats(chatIds, this.newGroupName, this.groupDescription)
       .subscribe({
-        next: (respose) => {
-          console.log('Group created: ', respose.groupId);
+        next: () => {
           this.showGroupDialog = false;
           this.isProcessing = false;
           this.isEditMode = false;

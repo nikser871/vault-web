@@ -33,7 +33,7 @@ public class GlobalExceptionHandler {
 
   /** Handles PrivateChatNotFoundException and returns 404 Not Found. */
   @ExceptionHandler(PrivateChatNotFoundException.class)
-  public ResponseEntity<String> handleGroupNotFound(PrivateChatNotFoundException ex) {
+  public ResponseEntity<String> handlePrivateChatNotFound(PrivateChatNotFoundException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
         .body("Private Chat not found: " + ex.getMessage());
   }

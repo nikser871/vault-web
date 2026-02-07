@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class CreateGroupFromChatsRequest {
-  @NotEmpty(message = "Chat IDS list can not be empty")
+  @NotEmpty(message = "Chat IDs list cannot be empty")
   List<Long> privateChatIds;
 
-  @NotBlank(message = "Group name can not be blank")
+  @NotBlank(message = "Group name cannot be blank")
   String groupName;
 
   String description;

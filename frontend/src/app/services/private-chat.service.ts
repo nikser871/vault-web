@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs/internal/Observable';
+import { Observable } from 'rxjs';
 import { PrivateChatDto } from '../models/dtos/PrivateChatDto';
 import { environment } from '../../environments/environment';
 import { ChatMessageDto } from '../models/dtos/ChatMessageDto';
@@ -36,11 +36,11 @@ export class PrivateChatService {
     );
   }
 
-  clearMultiplePrivateChats(privatechatIds: number[]) {
+  clearMultiplePrivateChats(privateChatIds: number[]) {
     return this.http.delete<BatchOperationResponse>(
       `${this.apiUrl}/private-chats/clear-multiple`,
       {
-        body: privatechatIds,
+        body: privateChatIds,
       },
     );
   }
