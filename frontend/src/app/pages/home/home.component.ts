@@ -144,6 +144,9 @@ export class HomeComponent implements OnInit {
   }
 
   cancelDialog() {
+    if (this.isProcessing) {
+      return;
+    }
     this.showClearConfirmDialog = false;
     this.showGroupDialog = false;
     this.newGroupName = '';

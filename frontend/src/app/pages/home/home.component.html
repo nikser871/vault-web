@@ -28,7 +28,7 @@
     </button>
     <button
       (click)="openCreateGroupDialog()"
-      class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
+      class="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
     >
       Create Group ({{ selectedChatIds.size }})
     </button>
@@ -56,7 +56,7 @@
           "
           [class.bg-blue-50]="isChatSelected(chat.id)"
           [class.cursor-pointer]="true"
-          [class.hover:bg-gray-100]="!isChatSelected(chat.id)"
+          [ngClass]="{ 'hover:bg-gray-100': !isChatSelected(chat.id) }"
           class="flex items-center px-4 py-3 transition"
         >
           <div *ngIf="isEditMode" class="mr-3">

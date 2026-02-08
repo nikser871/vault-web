@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { ChatMessageDto } from '../models/dtos/ChatMessageDto';
 import { BatchOperationResponse } from '../models/dtos/BatchOperationResponse';
 import { CreateGroupFromChatsRequest } from '../models/dtos/CreateGroupFromChatsRequest';
+import { ClearChatRequestDto } from '../models/dtos/ClearChatRequestDto';
 
 @Injectable({
   providedIn: 'root',
@@ -30,18 +31,21 @@ export class PrivateChatService {
     );
   }
 
-  getUserPrivateChats() {
+  getUserPrivateChats(): Observable<PrivateChatDto[]> {
     return this.http.get<PrivateChatDto[]>(
       `${this.apiUrl}/private-chats/user-chats`,
     );
   }
 
-  clearMultiplePrivateChats(privateChatIds: number[]) {
-    return this.http.delete<BatchOperationResponse>(
+  clearMultiplePrivateChats(
+    privateChatIds: number[],
+  ): Observable<BatchOperationResponse> {
+    const request: ClearChatRequestDto = {
+      privateChatIds,
+    };
+    return this.http.post<BatchOperationResponse>(
       `${this.apiUrl}/private-chats/clear-multiple`,
-      {
-        body: privateChatIds,
-      },
+      request,
     );
   }
 
@@ -49,7 +53,7 @@ export class PrivateChatService {
     privateChatIds: number[],
     groupName: string,
     description: string,
-  ) {
+  ): Observable<BatchOperationResponse> {
     const request: CreateGroupFromChatsRequest = {
       privateChatIds,
       groupName,

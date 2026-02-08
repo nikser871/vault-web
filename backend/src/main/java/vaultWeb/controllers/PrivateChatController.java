@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vaultWeb.dtos.BatchOperationDto;
 import vaultWeb.dtos.ChatMessageDto;
+import vaultWeb.dtos.ClearChatRequestDto;
 import vaultWeb.dtos.CreateGroupFromChatsRequest;
 import vaultWeb.dtos.PrivateChatDto;
 import vaultWeb.exceptions.DecryptionFailedException;
@@ -113,7 +114,7 @@ public class PrivateChatController {
     return privateChatDtos;
   }
 
-  @DeleteMapping("/clear-multiple")
+  @PostMapping("/clear-multiple")
   @Operation(
       summary = "Clear message from Multiple Chats",
       description = "Delete all message from the selected private chats")
@@ -121,9 +122,10 @@ public class PrivateChatController {
   @ApiResponse(responseCode = "401", description = "Unauthorized, user need to valid token")
   @ApiResponse(responseCode = "403", description = "User not authorized to clear those chats")
   public BatchOperationDto clearMultipleChats(
-      @RequestBody List<Long> privateChatIds, Authentication authentication) {
+      @Valid @RequestBody ClearChatRequestDto request, Authentication authentication) {
     String currentUsername = authentication.getName();
-    int deleteCount = privateChatService.clearMultipleChats(privateChatIds, currentUsername);
+    int deleteCount =
+        privateChatService.clearMultipleChats(request.getPrivateChatIds(), currentUsername);
     return BatchOperationDto.builder()
         .success(true)
         .message("Successfully cleared multiple chats.")

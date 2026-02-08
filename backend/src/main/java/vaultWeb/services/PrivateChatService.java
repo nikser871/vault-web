@@ -7,9 +7,9 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vaultWeb.exceptions.UnauthorizedException;
 import vaultWeb.exceptions.notfound.PrivateChatNotFoundException;
 import vaultWeb.exceptions.notfound.UserNotFoundException;
 import vaultWeb.models.Group;
@@ -97,7 +97,7 @@ public class PrivateChatService {
       // verify if user is part of this chat
       if (!(chat.getUser1().getId().equals(currentUser.getId())
           || chat.getUser2().getId().equals(currentUser.getId()))) {
-        throw new UnauthorizedException(
+        throw new AccessDeniedException(
             "You are not allowed to delete a private chat with this id " + privateChatId);
       }
 
@@ -147,7 +147,7 @@ public class PrivateChatService {
       boolean isOwnerIsUser1 = privateChat.getUser1().getId().equals(creator.getId());
       boolean isOwnerIsUser2 = privateChat.getUser2().getId().equals(creator.getId());
       if (!(isOwnerIsUser1 || isOwnerIsUser2)) {
-        throw new UnauthorizedException(
+        throw new AccessDeniedException(
             "User is not allowed to create group with chat where he didn't participate in "
                 + privateChatId);
       }
